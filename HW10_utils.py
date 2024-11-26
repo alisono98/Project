@@ -1,6 +1,7 @@
 import pandas as pd
-
+# from audio_utils import fft
 from data_utils import KMeansClustering, PCA, StandardScaler, SVC
+
 
 class AwesomeClassifier:
   def __init__(self, pca_components=16):
@@ -19,6 +20,28 @@ class AwesomeClassifier:
     features_df = self.transform(features, train=False)
     return self.classifier.predict(features_df)
 
+
+class AwesomeAudioClassifier(AwesomeClassifier):
+  def __init__(self, pca_components=16):
+    super().__init__(pca_components)
+
+  def ffts(self, features):
+    ffts = []
+    for idx, samples in features.iterrows():
+      fft_energy, fft_freqs = fft(samples)
+      ffts.append(fft_energy)
+    return pd.DataFrame(ffts)
+  
+  def transform(self, features, train=False):
+    unscaled_df = self.ffts(features)
+    if train:
+      scaled_df = self.scaler.fit_transform(unscaled_df)
+      features_df = self.pca.fit_transform(scaled_df)
+      print("Explained Variance:", self.pca.explained_variance())
+    else:
+      scaled_df = self.scaler.transform(unscaled_df)
+      features_df = self.pca.transform(scaled_df)
+    return features_df
 
 
 class AwesomeImageClassifier(AwesomeClassifier):
